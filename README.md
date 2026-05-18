@@ -1,2 +1,7 @@
 # Pokemon-log
-ポケモンの譜面、言わばポケモンログをclaudeを使って作りました
+@Claude
+ポケモンの棋譜、言わばポケモン譜のアプリをclaudeを使って作りました
+手動対応が必要です
+お恥ずかしながら、デバッグはまだしてません
+pokemon_battle_log_academy_prototype.htmlがシングル用のファイルで
+pokemon_battle_log_double_academy_prototype.htmlがダブル用のファイルになります
