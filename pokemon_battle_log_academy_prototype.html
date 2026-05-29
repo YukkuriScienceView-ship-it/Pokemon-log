@@ -295,46 +295,10 @@ function addTurn(){
   };
   let p1idx=getPrevIdxFromDOM(1);
   let p2idx=getPrevIdxFromDOM(2);
-  const orig1=p1idx,orig2=p2idx;
-  // 瀕死なら別のポケモンをセット
-  if(isFainted(state.parties[1][p1idx])){const alt=state.parties[1].findIndex((pk,i)=>i!==p1idx&&!isFainted(pk));if(alt!==-1)p1idx=alt;}
-  if(isFainted(state.parties[2][p2idx])){const alt=state.parties[2].findIndex((pk,i)=>i!==p2idx&&!isFainted(pk));if(alt!==-1)p2idx=alt;}
-  const _pk1=state.parties[1][p1idx];const _pk2=state.parties[2][p2idx];
+  // 瀕死でも自動交代しない - ポケモンはそのまま場に残す
   const d1=getActiveCellData(1,n);const d2=getActiveCellData(2,n);
   const alive=(parties,i)=>parties[i]&&parties[i].currentHP>0;
   const firstAlive=(parties,exclude)=>parties.findIndex((pk,i)=>i!==exclude&&pk.currentHP>0);
-  const c1=mkCell(p1idx!==orig1?'わざ':prev?(prev.c1.action==='控え'?'わざ':prev.c1.action):'わざ');
-  c1.fieldIdx=p1idx;
-  c1.outIdx=alive(state.parties[1],orig1)?orig1:firstAlive(state.parties[1],-1);
-  c1.switchInIdx=firstAlive(state.parties[1],orig1);
-  c1.benchIdx=firstAlive(state.parties[1],p1idx);
-  c1.filterFainted=false;
-  if(p1idx!==orig1){
-    const snap1=prev?.snap?.[1]?.[p1idx];
-    c1.status=snap1?.currentStatus||'none';c1.extra=[...(snap1?.currentExtra||[])];c1.memo=snap1?.currentMemo||'';c1.memoField=snap1?.currentMemo||'';
-    c1.ranks=mkRanks();
-  }else{
-    c1.status=d1.status;c1.outStatus=d1.status;c1.extra=d1.extra;c1.memo=d1.memo;c1.memoField=d1.memo;
-    if(d1.ranks)c1.ranks=d1.ranks;
-    c1.absentType=prev?.c1.absentType??0;
-  }
-  const c2=mkCell(p2idx!==orig2?'わざ':prev?(prev.c2.action==='控え'?'わざ':prev.c2.action):'わざ');
-  c2.fieldIdx=p2idx;
-  c2.outIdx=alive(state.parties[2],orig2)?orig2:firstAlive(state.parties[2],-1);
-  c2.switchInIdx=firstAlive(state.parties[2],orig2);
-  c2.benchIdx=firstAlive(state.parties[2],p2idx);
-  c2.filterFainted=false;
-  if(p2idx!==orig2){
-    const snap2=prev?.snap?.[2]?.[p2idx];
-    c2.status=snap2?.currentStatus||'none';c2.extra=[...(snap2?.currentExtra||[])];c2.memo=snap2?.currentMemo||'';c2.memoField=snap2?.currentMemo||'';
-    c2.ranks=mkRanks();
-  }else{
-    c2.status=d2.status;c2.outStatus=d2.status;c2.extra=d2.extra;c2.memo=d2.memo;c2.memoField=d2.memo;
-    if(d2.ranks)c2.ranks=d2.ranks;
-    c2.absentType=prev?.c2.absentType??0;
-  }
-  const prevH=prev||state.opening;
-  const copyH=h=>({...h});
   // スナップ前に前ターンのcell status/memoをpkへ書き戻す（次ターンのデフォルト復元用）
   if(prev){
     const syncCell=(t,side)=>{
@@ -369,6 +333,29 @@ function addTurn(){
   }
   const snap=snapshotParties();
   if(n===0)state.openingSnap=snap;
+  // スナップ取得後にcellを構築 → status/extra/memoはスナップから取得
+  const makeC=(pIdx,prevC,d,parties,sideNum)=>{
+    const c=mkCell(prevC?(prevC.action==='控え'?'わざ':prevC.action):'わざ');
+    c.fieldIdx=pIdx;
+    c.outIdx=alive(parties,pIdx)?pIdx:firstAlive(parties,-1);
+    c.switchInIdx=firstAlive(parties,pIdx);
+    c.benchIdx=firstAlive(parties,pIdx);
+    c.filterFainted=false;
+    const pkSnap=snap[sideNum]?.[pIdx];
+    c.status=pkSnap?.currentStatus||'none';
+    c.outStatus=c.status;
+    c.extra=[...d.extra];
+    c.memo=pkSnap?.currentMemo||'';
+    c.memoField=c.memo;
+    if(d.ranks)c.ranks=d.ranks;
+    c.absentType=prevC?.absentType??0;
+    return c;
+  };
+  const c1=makeC(p1idx,prev?.c1,d1,state.parties[1],1);
+  const c2=makeC(p2idx,prev?.c2,d2,state.parties[2],2);
+  const _pk1=state.parties[1][p1idx];const _pk2=state.parties[2][p2idx];
+  const prevH=prev||state.opening;
+  const copyH=h=>({...h});
   state.turns.push({n:prev?prev.n:1,isNew:true,
     p1idx,p2idx,c1,c2,snap,
     hazards1:copyH(prevH.hazards1||mkHazards()),hazards2:copyH(prevH.hazards2||mkHazards()),
