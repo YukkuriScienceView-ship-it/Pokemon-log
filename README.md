@@ -5,3 +5,6 @@
 お恥ずかしながら、デバッグはまだしてません
 pokemon_battle_log_academy_prototype.htmlがシングル用のファイルで
 pokemon_battle_log_double_academy_prototype.htmlがダブル用のファイルになります
+
+2026/06/30
+HP実数値を入力する必要がない、%表示バージョンを新たにアップロードしました
